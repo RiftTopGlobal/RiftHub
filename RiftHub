@@ -1,21 +1,19 @@
 local HttpService = game:GetService("HttpService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 
--- Supabase Configuration
 local SUPABASE_URL = "https://nmlyrklgdnjajowsapte.supabase.co"
 local SUPABASE_KEY = "sb_publishable_5SexwDaSZQAVyiveuYg3JA_23kfYu6g"
 
--- Query Supabase to check if the running user's ID is whitelisted
-local url = SUPABASE_URL .. "/rest/v1/RiftHub?user_id=eq." .. tostring(LocalPlayer.UserId) .. "&select=script_code"
+-- Force the player's User ID into a clean string for the URL
+local userId = tostring(LocalPlayer.UserId)
+local url = SUPABASE_URL .. "/rest/v1/RiftHub?user_id=eq." .. userId .. "&select=script_code"
 
--- Detect available HTTP request function in the executor
 local requestFunc = (syn and syn.request) or (http and http.request) or request or http_request
 
 if not requestFunc then
-    error("[RJR] 没有 هذا 脚本", 0)
+    error("[RJR] 没有这个脚本", 0)
 end
 
--- Make request to Supabase API
 local response = requestFunc({
     Url = url,
     Method = "GET",
@@ -27,20 +25,20 @@ local response = requestFunc({
 })
 
 if response and response.Success then
-    local data = HttpService:JSONDecode(response.Body)
+    local success, data = pcall(function()
+        return HttpService:JSONDecode(response.Body)
+    end)
     
-    -- Check if user is whitelisted and script code exists
-    if #data > 0 and data[1].script_code then
+    if success and type(data) == "table" and #data > 0 and data[1].script_code then
         local loadFunc, err = loadstring(data[1].script_code)
         if loadFunc then
             loadFunc()
         else
-            error("[RJR] 没有 هذا 脚本", 0)
+            error("[RJR] 没有这个脚本", 0)
         end
     else
-        -- User ID is not in the whitelist table
-        error("[RJR] 没有 هذا 脚本", 0)
+        error("[RJR] 没有这个脚本", 0)
     end
 else
-    error("[RJR] 没有 هذا 脚本", 0)
+    error("[RJR] 没有这个脚本", 0)
 end
