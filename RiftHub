@@ -1,44 +1,28 @@
-local HttpService = game:GetService("HttpService")
-local LocalPlayer = game:GetService("Players").LocalPlayer
-
-local SUPABASE_URL = "https://nmlyrklgdnjajowsapte.supabase.com"
+-- Rift Hub loader
+local SUPABASE_URL = "https://nmlyrklgdnjajowsapte.supabase.co"
 local SUPABASE_KEY = "sb_publishable_5SexwDaSZQAVyiveuYg3JA_23kfYu6g"
 
--- Force the player's User ID into a clean string for the URL
-local userId = tostring(LocalPlayer.UserId)
-local url = SUPABASE_URL .. "/rest/v1/RiftHub?user_id=eq." .. userId .. "&select=script_code"
+local lp = game:GetService("Players").LocalPlayer
+local HttpService = game:GetService("HttpService")
 
-local requestFunc = (syn and syn.request) or (http and http.request) or request or http_request
+local url = SUPABASE_URL .. "/rest/v1/RiftHub?user_id=eq." .. lp.UserId .. "&select=script_code"
+local ok, resp = pcall(function()
+    return request({
+        Url = url,
+        Method = "GET",
+        Headers = {
+            ["apikey"]        = SUPABASE_KEY,
+            ["Authorization"] = "Bearer " .. SUPABASE_KEY,
+            ["Accept"]        = "application/json",
+        },
+    })
+end)
+if not ok or not resp then warn("Rift Hub: request failed"); return end
+if resp.StatusCode ~= 200 then warn("Rift Hub: HTTP " .. tostring(resp.StatusCode) .. " - " .. tostring(resp.Body)); return end
 
-if not requestFunc then
-    error("[RJR] 没有这个脚本", 0)
+local data = HttpService:JSONDecode(resp.Body)
+if type(data) ~= "table" or #data == 0 then
+    warn("Rift Hub: user " .. lp.UserId .. " not whitelisted")
+    return
 end
-
-local response = requestFunc({
-    Url = url,
-    Method = "GET",
-    Headers = {
-        ["apikey"] = SUPABASE_KEY,
-        ["Authorization"] = "Bearer " .. SUPABASE_KEY,
-        ["Content-Type"] = "application/json"
-    }
-})
-
-if response and response.Success then
-    local success, data = pcall(function()
-        return HttpService:JSONDecode(response.Body)
-    end)
-    
-    if success and type(data) == "table" and #data > 0 and data[1].script_code then
-        local loadFunc, err = loadstring(data[1].script_code)
-        if loadFunc then
-            loadFunc()
-        else
-            error("[RJR] 没有这个脚本", 0)
-        end
-    else
-        error("[RJR] 没有这个脚本", 0)
-    end
-else
-    error("[RJR] 没有这个脚本", 0)
-end
+loadstring(data[1].script_code)()
