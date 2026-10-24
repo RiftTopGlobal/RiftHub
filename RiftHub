@@ -1,7 +1,7 @@
 local HttpService = game:GetService("HttpService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 
-local SUPABASE_URL = "https://nmlyrklgdnjajowsapte.supabase.co"
+local SUPABASE_URL = "https://nmlyrklgdnjajowsapte.supabase.com"
 local SUPABASE_KEY = "sb_publishable_5SexwDaSZQAVyiveuYg3JA_23kfYu6g"
 
 -- Force the player's User ID into a clean string for the URL
