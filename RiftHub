@@ -1,11 +1,15 @@
--- Rift Hub loader
+-- Rift Hub loader — whitelist via Supabase, packed hub via GitHub
+-- Users paste this one-liner in their executor:
+--   loadstring(game:HttpGet("https://raw.githubusercontent.com/RiftTopGlobal/RiftHub/main/RiftHub"))()
+
 local SUPABASE_URL = "https://nmlyrklgdnjajowsapte.supabase.co"
 local SUPABASE_KEY = "sb_publishable_5SexwDaSZQAVyiveuYg3JA_23kfYu6g"
+local HUB_URL      = "https://raw.githubusercontent.com/RiftTopGlobal/RiftHub/main/uwu.lua"
 
 local lp = game:GetService("Players").LocalPlayer
 local HttpService = game:GetService("HttpService")
 
-local url = SUPABASE_URL .. "/rest/v1/RiftHub?user_id=eq." .. lp.UserId .. "&select=script_code"
+local url = SUPABASE_URL .. "/rest/v1/RiftHub?user_id=eq." .. lp.UserId .. "&select=user_id"
 local ok, resp = pcall(function()
     return request({
         Url = url,
@@ -17,12 +21,21 @@ local ok, resp = pcall(function()
         },
     })
 end)
-if not ok or not resp then warn("Rift Hub: request failed"); return end
-if resp.StatusCode ~= 200 then warn("Rift Hub: HTTP " .. tostring(resp.StatusCode) .. " - " .. tostring(resp.Body)); return end
+if not ok or not resp then warn("Rift Hub: whitelist request failed"); return end
+if resp.StatusCode ~= 200 then
+    warn("Rift Hub: HTTP " .. tostring(resp.StatusCode) .. " - " .. tostring(resp.Body))
+    return
+end
 
 local data = HttpService:JSONDecode(resp.Body)
 if type(data) ~= "table" or #data == 0 then
     warn("Rift Hub: user " .. lp.UserId .. " not whitelisted")
     return
 end
-loadstring(data[1].script_code)()
+
+local ok2, src = pcall(function() return game:HttpGet(HUB_URL) end)
+if not ok2 or not src then warn("Rift Hub: hub fetch failed"); return end
+
+local fn, err = loadstring(src)
+if not fn then warn("Rift Hub: loadstring failed - " .. tostring(err)); return end
+fn()
